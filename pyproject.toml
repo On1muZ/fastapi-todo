@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "fastapi-todo"
+version = "0.1.0"
+description = ""
+authors = ["On1muZ <durnovarsenij@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.110.0"
+pydantic = "^2.6.3"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.27"}
+fastui = "^0.5.2"
+passlib = "^1.7.4"
+alembic = "^1.13.1"
+asyncpg = "^0.29.0"
+pydantic-settings = "^2.2.1"
+setuptools = "^69.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
