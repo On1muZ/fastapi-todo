@@ -20,6 +20,15 @@ async def main_page(user: User = Depends(get_current_user),
     components = [
         c.Heading(text="ToDo", level=1),
         c.Heading(text=f'Welcome back {user.username}!', level=2),
+        c.Form(
+            footer=[],
+            submit_url="/api/auth/logout",
+            submit_trigger=PageEvent(name='logout'),
+            form_fields=[]
+        ),
+        c.Button(text='Logout', on_click=PageEvent(name='logout'),
+                 class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5'),
+        c.Paragraph(text=''),
         c.Button(text='Create ToDo', on_click=GoToEvent(url='/todo/create/'),
                  class_name='btn btn-outline-success btn-lg border border-3 rounded rounded-5'),
         c.Paragraph(text=' '),
@@ -123,6 +132,15 @@ async def finished_todo_page(todos: list[ToDo] = Depends(get_user_todos),
     components = [
         c.Heading(text="Finished ToDo", level=1),
         c.Heading(text=f'Welcome back {user.username}!', level=2),
+        c.Form(
+            footer=[],
+            submit_url="/api/auth/logout",
+            submit_trigger=PageEvent(name='logout'),
+            form_fields=[]
+        ),
+        c.Button(text='Logout', on_click=PageEvent(name='logout'),
+                 class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5'),
+        c.Paragraph(text=''),
         c.Button(text='Back', on_click=BackEvent(),
                  class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5'),
     ]

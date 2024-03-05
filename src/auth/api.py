@@ -41,4 +41,10 @@ async def sign_in_user(response: Response,
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Incorrect data")
-    return [c.FireEvent(event=GoToEvent(url='/'))]
+    return [c.FireEvent(event=GoToEvent(url='/todo/'))]
+
+
+@router.post('/logout')
+async def logout(response: Response):
+    response.delete_cookie("access_token")
+    return [c.FireEvent(event=GoToEvent(url='/auth'))]
