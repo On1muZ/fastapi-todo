@@ -6,6 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from config import Settings
 from alembic import context
+from todo.database.models import Base as ToDoBase
 
 
 settings = Settings()
@@ -23,7 +24,7 @@ config.set_section_option(section, "DB_PORT", settings.database.PORT)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = (UserBase.metadata, )
+target_metadata = (UserBase.metadata, ToDoBase.metadata)
 
 
 def run_migrations_offline() -> None:
