@@ -1,6 +1,4 @@
 from uuid import UUID
-
-from fastui.components.display import DisplayLookup
 from fastui.events import GoToEvent, PageEvent, BackEvent
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,10 +20,10 @@ async def main_page(user: User = Depends(get_current_user),
     components = [
         c.Heading(text="ToDo", level=1),
         c.Heading(text=f'Welcome back {user.username}!', level=2),
-        c.Button(text='Create ToDo', on_click=GoToEvent(url='/todo/create'),
+        c.Button(text='Create ToDo', on_click=GoToEvent(url='/todo/create/'),
                  class_name='btn btn-outline-success btn-lg border border-3 rounded rounded-5'),
         c.Paragraph(text=' '),
-        c.Button(text='Finished ToDos', on_click=GoToEvent(url='/finished_todos'),
+        c.Button(text='Finished ToDos', on_click=GoToEvent(url='/todo/finished/'),
                  class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5'),
     ]
     for i in todos:
@@ -53,7 +51,7 @@ async def main_page(user: User = Depends(get_current_user),
     ]
 
 
-@router.get("/create", response_model=FastUI, response_model_exclude_none=True)
+@router.get("/create/", response_model=FastUI, response_model_exclude_none=True)
 async def create_todo_page(user: User = Depends(get_current_user)):
     return [
         c.PageTitle(text='Create ToDo'),
@@ -115,5 +113,39 @@ async def view_todo_page(todo_id: UUID,
                          class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5',
                          on_click=BackEvent())
             ]
+        )
+    ]
+
+
+@router.get('/finished/', response_model=FastUI, response_model_exclude_none=True)
+async def finished_todo_page(todos: list[ToDo] = Depends(get_user_todos),
+                             user: User = Depends(get_current_user)):
+    components = [
+        c.Heading(text="Finished ToDo", level=1),
+        c.Heading(text=f'Welcome back {user.username}!', level=2),
+        c.Button(text='Back', on_click=BackEvent(),
+                 class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5'),
+    ]
+    for i in todos:
+        components.append(c.Paragraph(text=''))
+        if i.is_finished:
+            components.append(
+                c.Div(
+                    components=[
+                        c.Heading(text=i.name, level=3),
+                        c.Paragraph(text=i.text if i.text is not None else ""),
+                        c.Heading(text=f"Start time: {i.start_time}" if i.start_time is not None else "", level=6),
+                        c.Heading(text=f"Finish time: {i.finish_time}" if i.finish_time is not None else "", level=6),
+                        c.Button(text="View ToDo", on_click=GoToEvent(url=f"/todo/view/{i.id}"),
+                                 class_name="btn btn-outline-info btn-lg border border-3 rounded rounded-5"),
+                    ],
+                    class_name="p-3 mb-2 bg-warning text-white rounded text-center"
+                               " rounded-5 border border-5"
+                )
+            )
+    return [
+        c.PageTitle(text="ToDo"),
+        c.Page(
+            components=components,
         )
     ]
