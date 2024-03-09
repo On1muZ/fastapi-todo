@@ -24,13 +24,13 @@ app.include_router(
 
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
 async def validate_unauthorized(req, _):
-    return RedirectResponse(url="/api/auth", status_code=303)
+    return RedirectResponse(url="/api/auth/", status_code=303)
 
 
 @app.get('/{path:path}')
 async def html_landing() -> HTMLResponse:
     """Simple HTML page which serves the React app, comes last as it matches all paths."""
-    return HTMLResponse(prebuilt_html(title='FastUI Demo'))
+    return HTMLResponse(prebuilt_html(title='ToDo'))
 
 
 if __name__ == "__main__":

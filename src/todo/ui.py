@@ -1,4 +1,6 @@
 from uuid import UUID
+
+from fastui.components import FireEvent
 from fastui.events import GoToEvent, PageEvent, BackEvent
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,14 +14,14 @@ from auth.dependencies import get_current_user
 from .router import router
 from fastui import components as c, FastUI
 from .schemas import CreateToDo
+from ui import demo_page
 
 
 @router.get("/", response_model=FastUI, response_model_exclude_none=True)
 async def main_page(user: User = Depends(get_current_user),
                     todos: list[ToDo] = Depends(get_user_todos)):
     components = [
-        c.Heading(text="ToDo", level=1),
-        c.Heading(text=f'Welcome back {user.username}!', level=2),
+        c.Heading(text=f'Welcome back {user.username if user is not None else ""}!', level=2),
         c.Form(
             footer=[],
             submit_url="/api/auth/logout",
@@ -27,7 +29,9 @@ async def main_page(user: User = Depends(get_current_user),
             form_fields=[]
         ),
         c.Button(text='Logout', on_click=PageEvent(name='logout'),
-                 class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5'),
+                 class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5') if user is not None else
+        c.Button(text='Login', on_click=GoToEvent(url='/auth/'),
+                 class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5'),
         c.Paragraph(text=''),
         c.Button(text='Create ToDo', on_click=GoToEvent(url='/todo/create/'),
                  class_name='btn btn-outline-success btn-lg border border-3 rounded rounded-5'),
@@ -52,94 +56,91 @@ async def main_page(user: User = Depends(get_current_user),
                                " rounded-5 border border-5"
                 )
             )
-    return [
-        c.PageTitle(text="ToDo"),
-        c.Page(
-            components=components,
-        )
-    ]
+    return demo_page(*components)
 
 
 @router.get("/create/", response_model=FastUI, response_model_exclude_none=True)
 async def create_todo_page(user: User = Depends(get_current_user)):
-    return [
-        c.PageTitle(text='Create ToDo'),
-        c.Page(
-            components=[
-                c.Heading(text="ToDo", level=1),
-                c.Heading(text=f"Create Your ToDo, {user.username}", level=2),
-                c.ModelForm(
-                    model=CreateToDo,
-                    method="POST",
-                    display_mode='page',
-                    submit_url="/api/todo/create",
-                )
-            ]
-        )
-    ]
+    if user is None:
+        return [FireEvent(event=GoToEvent(url='/auth/'))]
+    return demo_page(
+        c.Heading(text=f"Create Your ToDo, {user.username}", level=2),
+        c.ModelForm(
+            model=CreateToDo,
+            method="POST",
+            display_mode='page',
+            submit_url="/api/todo/create",
+            footer=[],
+            submit_trigger=PageEvent(name='create-todo')
+        ),
+        c.Button(text='Create', class_name='btn btn-outline-success btn-lg border border-3 rounded rounded-5',
+                 on_click=PageEvent(name='create-todo')),
+        c.Paragraph(text=''),
+        c.Button(text="Back",
+                 class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5',
+                 on_click=BackEvent())
+    )
 
 
 @router.get('/view/{todo_id}', response_model=FastUI, response_model_exclude_none=True)
 async def view_todo_page(todo_id: UUID,
                          session: AsyncSession = Depends(get_async_session),
-                         user: User = Depends(get_current_user)):
+                         user: User | None = Depends(get_current_user)):
+    if user is None:
+        return [FireEvent(event=GoToEvent(url='/auth/'))]
     todo = await get_todo_by_id(todo_id, session)
     if user.id != todo.user_id:
         return [c.FireEvent(event=GoToEvent(url='/todo/'))]
-    return [
-        c.PageTitle(text="ToDo"),
-        c.Page(
-            components=[
-                c.Heading(text="ToDo", level=1),
-                c.ModelForm(
-                    model=BaseToDo,
-                    initial=BaseToDo(
-                        name=todo.name,
-                        text=todo.text,
-                        time_to_start=todo.start_time,
-                        time_to_finish=todo.finish_time,
-                        completed=todo.is_finished,
-                    ).dict(),
-                    footer=[],
-                    submit_url=f"/api/todo/update/{todo.id}/",
-                    submit_trigger=PageEvent(name='update-todo')
-                ),
-                c.Button(text='Update',
-                         class_name="btn btn-outline-success btn-lg border border-3 rounded rounded-5",
-                         on_click=PageEvent(name='update-todo')),
-                c.Paragraph(text=''),
-                c.Form(
-                    submit_url=f"/api/todo/delete/{todo.id}",
-                    submit_trigger=PageEvent(name='delete-todo'),
-                    footer=[],
-                    form_fields=[]
-                ),
-                c.Button(text='Delete',
-                         class_name="btn btn-outline-danger btn-lg border border-3 rounded rounded-5",
-                         on_click=PageEvent(name='delete-todo')),
-                c.Paragraph(text=''),
-                c.Button(text="Back",
-                         class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5',
-                         on_click=BackEvent())
-            ]
-        )
-    ]
+    return demo_page(
+        c.Heading(text="ToDo", level=1),
+        c.ModelForm(
+            model=BaseToDo,
+            initial=BaseToDo(
+                name=todo.name,
+                text=todo.text,
+                time_to_start=todo.start_time,
+                time_to_finish=todo.finish_time,
+                completed=todo.is_finished,
+            ).dict(),
+            footer=[],
+            submit_url=f"/api/todo/update/{todo.id}/",
+            submit_trigger=PageEvent(name='update-todo')
+        ),
+        c.Button(text='Update',
+                 class_name="btn btn-outline-success btn-lg border border-3 rounded rounded-5",
+                 on_click=PageEvent(name='update-todo')),
+        c.Paragraph(text=''),
+        c.Form(
+            submit_url=f"/api/todo/delete/{todo.id}",
+            submit_trigger=PageEvent(name='delete-todo'),
+            footer=[],
+            form_fields=[]
+        ),
+        c.Button(text='Delete',
+                 class_name="btn btn-outline-danger btn-lg border border-3 rounded rounded-5",
+                 on_click=PageEvent(name='delete-todo')),
+        c.Paragraph(text=''),
+        c.Button(text="Back",
+                 class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5',
+                 on_click=BackEvent())
+    )
 
 
 @router.get('/finished/', response_model=FastUI, response_model_exclude_none=True)
 async def finished_todo_page(todos: list[ToDo] = Depends(get_user_todos),
-                             user: User = Depends(get_current_user)):
+                             user: User | None = Depends(get_current_user)):
     components = [
         c.Heading(text="Finished ToDo", level=1),
-        c.Heading(text=f'Welcome back {user.username}!', level=2),
+        c.Heading(text=f'Welcome back {user.username if user is not None else ''}!', level=2),
         c.Form(
             footer=[],
             submit_url="/api/auth/logout",
             submit_trigger=PageEvent(name='logout'),
             form_fields=[]
         ),
-        c.Button(text='Logout', on_click=PageEvent(name='logout'),
-                 class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5'),
+        *[c.Button(text='Logout', on_click=PageEvent(name='logout'),
+                   class_name='btn btn-outline-danger btn-lg border border-3 rounded rounded-5') if user is not None
+          else c.Paragraph(text='Please login to see finished todos')],
         c.Paragraph(text=''),
         c.Button(text='Back', on_click=BackEvent(),
                  class_name='btn btn-outline-info btn-lg border border-3 rounded rounded-5'),
@@ -161,9 +162,4 @@ async def finished_todo_page(todos: list[ToDo] = Depends(get_user_todos),
                                " rounded-5 border border-5"
                 )
             )
-    return [
-        c.PageTitle(text="ToDo"),
-        c.Page(
-            components=components,
-        )
-    ]
+    return demo_page(*components)

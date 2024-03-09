@@ -10,6 +10,8 @@ from .database.utils import get_all_user_todos_from_db
 
 async def get_user_todos(user: User = Depends(get_current_user),
                          session: AsyncSession = Depends(get_async_session)):
+    if user is None:
+        return []
     data = await get_all_user_todos_from_db(user.id, session)
     list_of_todos = []
     for item in data:

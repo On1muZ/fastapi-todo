@@ -47,4 +47,4 @@ async def sign_in_user(response: Response,
 @router.post('/logout')
 async def logout(response: Response):
     response.delete_cookie("access_token")
-    return [c.FireEvent(event=GoToEvent(url='/auth'))]
+    return [c.FireEvent(event=GoToEvent(url='/auth/'))]
